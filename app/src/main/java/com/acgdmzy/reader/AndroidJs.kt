@@ -8,7 +8,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.lang.System.`in`
 
 
 // 继承自Object类
@@ -47,8 +46,9 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
             Log.e(tag, "File doesn't exist!")
             return null
         }
+        var `in`: FileInputStream? = null
         return try {
-            val `in` = FileInputStream(file)
+            `in` = FileInputStream(file)
             val inSize: Long = `in`.channel.size() //判断FileInputStream中是否有内容
             if (inSize == 0L) {
                 Log.d(tag, "The FileInputStream has no content!")
@@ -65,11 +65,10 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
             null
         } finally {
             try {
-                `in`.close()
+                `in`?.close()
             } catch (e: IOException) {
                 return null
             }
-            //或IoUtils.closeQuietly(in);
         }
     }
 }

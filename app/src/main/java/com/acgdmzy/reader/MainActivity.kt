@@ -5,16 +5,17 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.net.URLEncoder
 
 
 private val PERMISSIONS_STORAGE = arrayOf<String>(
@@ -33,6 +34,13 @@ class MainActivity : AppCompatActivity() {
         // makeStatusBarTransparent()
         Log.i("Height", getStatusBarHeight().toString())
 
+        if (Build.VERSION.SDK_INT < 30) {
+            window.statusBarColor = Color.argb(255, 255, 255, 255)
+            if (Build.VERSION.SDK_INT >= 23) {
+                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            }
+        }
+
         //申请权限
         requestAllPower()
 
@@ -44,12 +52,18 @@ class MainActivity : AppCompatActivity() {
         webSettings.allowFileAccess = true
         webView.addJavascriptInterface(AndroidJs(this), "drive")
 
-        val path: String?
+        var path: String?
         if (intent.data != null) {
             val uri = intent.data
-            path = URLEncoder.encode(uri.toString(),"UTF-8")
+            path = URIPathHelper.getPath(this, uri!!)
+            if (path == null) {
+                Toast.makeText(this, "文件路径解析失败了", Toast.LENGTH_SHORT).show()
+                path = Uri.encode(uri.toString())
+            } else {
+                path = Uri.encode(path)
+            }
         } else {
-            path = getPath("/storage/emulated/0/轻小说/报告！哥哥和我要结婚了！/报告！哥哥和我要结婚了！ 02.epub")
+            path = Uri.encode("/storage/emulated/0/轻小说/报告！哥哥和我要结婚了！/报告！哥哥和我要结婚了！ 02.epub")
         }
         Log.i("Path", path.toString())
 
@@ -104,14 +118,5 @@ class MainActivity : AppCompatActivity() {
             height = applicationContext.resources.getDimensionPixelSize(resourceId)
         }
         return height
-    }
-
-    fun getPath(path: String): String {
-        return URLEncoder.encode(
-            path.replace(
-                " ",
-                "%20"
-            ), "UTF-8"
-        )
     }
 }
