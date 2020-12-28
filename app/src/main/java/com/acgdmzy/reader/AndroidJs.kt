@@ -1,13 +1,16 @@
 package com.acgdmzy.reader
 
+import android.R.attr
+import android.R.attr.password
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.widget.Toast
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.IOException
+import java.io.*
 
 
 // 继承自Object类
@@ -25,7 +28,8 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     @JavascriptInterface
     fun readFile(path: String): String? {
         if (path.startsWith("content://")) {
-            val inStream = activity.contentResolver.openInputStream(activity.intent.data!!)
+            val uri = Uri.parse(path)
+            val inStream = activity.contentResolver.openInputStream(uri)
             if (inStream != null) {
                 val buffer = ByteArray(inStream.available())
                 inStream.read(buffer)
@@ -36,8 +40,34 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
+    fun saveFile(name: String, type: String?, base64Data: String) {
+        val data = Base64.decode(base64Data.split(",")[1], 0)
+        val dir = activity.getExternalFilesDir(type)
+        writeByteArrayToFile("$dir/$name", data)
+        Log.i("saveFile",name)
+    }
+
+    @JavascriptInterface
+    fun getExternalFilesDir(type: String?): String {
+        return activity.getExternalFilesDir(type).toString()
+    }
+
+    @JavascriptInterface
     fun toast(msg: String) {
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    @JavascriptInterface
+    fun openBook() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/epub+zip"
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        activity.startActivityForResult(intent, 1)
     }
 
     private fun readFileToByteArray(path: String): ByteArray? {
@@ -69,6 +99,17 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
             } catch (e: IOException) {
                 return null
             }
+        }
+    }
+
+    private fun writeByteArrayToFile(path: String, data: ByteArray) {
+        try {
+            val fos = FileOutputStream(path)
+            fos.write(data)
+            fos.flush()
+            fos.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
