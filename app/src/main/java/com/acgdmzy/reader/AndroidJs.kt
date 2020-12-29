@@ -10,8 +10,8 @@ import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import java.io.*
-
 
 // 继承自Object类
 class AndroidJs constructor(private val activity: MainActivity) : Any() {
@@ -35,8 +35,15 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
                 inStream.read(buffer)
                 return Base64.encodeToString(buffer, Base64.NO_WRAP)
             }
+        } else {
+            val data = readFileToByteArray(path)
+            if (data != null) return Base64.encodeToString(data, Base64.NO_WRAP)
         }
-        return Base64.encodeToString(readFileToByteArray(path), Base64.NO_WRAP)
+        if (path.startsWith("file://"))  {
+            val data = readFileToByteArray(path.substring(7))
+            if (data != null) return Base64.encodeToString(data, Base64.NO_WRAP)
+        }
+        return null
     }
 
     @JavascriptInterface
@@ -44,7 +51,8 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
         val data = Base64.decode(base64Data.split(",")[1], 0)
         val dir = activity.getExternalFilesDir(type)
         writeByteArrayToFile("$dir/$name", data)
-        Log.i("saveFile",name)
+        activity.setResult(AppCompatActivity.RESULT_OK,activity.intent)
+        Log.i("saveFile", name)
     }
 
     @JavascriptInterface
@@ -55,6 +63,14 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     @JavascriptInterface
     fun toast(msg: String) {
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    @JavascriptInterface
+    fun loadBook(name: String,path: String) {
+        val newIntent = Intent(activity, MainActivity::class.java)
+        newIntent.putExtra("path", path);
+        newIntent.putExtra("name", name);
+        activity.startActivityForResult(newIntent,2);
     }
 
     @JavascriptInterface

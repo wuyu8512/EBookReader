@@ -29,6 +29,7 @@ private const val REQUEST_PERMISSION_CODE = 1
 
 
 class MainActivity : AppCompatActivity() {
+    var webView : WebView? = null
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,8 +49,9 @@ class MainActivity : AppCompatActivity() {
         requestAllPower()
 
         val webView = findViewById<WebView>(R.id.web_view)
+        this.webView = webView
         WebView.setWebContentsDebuggingEnabled(true)
-        val webSettings = webView!!.settings
+        val webSettings = webView.settings
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true
         webSettings.allowFileAccess = true
@@ -73,33 +75,44 @@ class MainActivity : AppCompatActivity() {
         if (name == null) name = path
         if (path != null) {
             // webView.loadUrl("http://192.168.1.26:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
-             webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            // webView.loadUrl("http://192.168.1.26:8080")
-             webView.loadUrl("file:///android_asset/dist/index.html")
+            //webView.loadUrl("http://192.168.1.26:8080")
+            webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            if (data?.data != null) {
-                val takeFlags = (intent.flags
-                        and (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
-                try {
-                    contentResolver.takePersistableUriPermission(data.data!!, takeFlags)
-                } catch (e: Exception) {
-                    Log.w("onActivityResult", "Exception: " + e.message)
+        if (resultCode == RESULT_OK)
+        {
+            if (requestCode == 1) {
+                if (data?.data != null) {
+                    val takeFlags = (intent.flags
+                            and (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
+                    try {
+                        contentResolver.takePersistableUriPermission(data.data!!, takeFlags)
+                    } catch (e: Exception) {
+                        Log.w("onActivityResult", "Exception: " + e.message)
+                    }
+                    loadData(data)
                 }
-                loadData(data)
+            }
+            else if (requestCode == 2){
+                val path = data?.getStringExtra("path")
+                val name = data?.getStringExtra("name")
+                if (path != null && !path.startsWith("content://")) {
+                    val webView = this.webView!!
+                    webView.evaluateJavascript("addToBook('$path','$name')", null)
+                }
             }
         }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-            val webView = findViewById<WebView>(R.id.web_view)
+            val webView = this.webView!!
             if (webView.canGoBack()) {
                 webView.goBack()
                 return true
@@ -114,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         //释放资源
-        findViewById<WebView>(R.id.web_view)?.destroy()
+        this.webView?.destroy()
         super.onDestroy()
     }
 
@@ -147,22 +160,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun Activity.makeStatusBarTransparent() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.apply {
-                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-                addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    decorView.systemUiVisibility =
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                }
-                statusBarColor = Color.TRANSPARENT
-            }
-        }
-    }
-
     //get StatusBar Height
     fun getStatusBarHeight(): Int {
         var height = 0
@@ -181,12 +178,7 @@ class MainActivity : AppCompatActivity() {
         val newIntent = Intent(this, MainActivity::class.java)
         newIntent.putExtra("path", path);
         newIntent.putExtra("name", name);
-        startActivity(newIntent);
-
-        if (path != null && !path.startsWith("content://")) {
-            val webView = findViewById<WebView>(R.id.web_view)
-            webView.evaluateJavascript("addToBook('$path','$name')", null)
-        }
+        startActivityForResult(newIntent,2);
     }
 
     private fun getPath(intent: Intent): String? {
