@@ -56,6 +56,11 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
+    fun fileExits(path: String): Boolean {
+        return File(path).exists()
+    }
+
+    @JavascriptInterface
     fun getExternalFilesDir(type: String?): String {
         return activity.getExternalFilesDir(type).toString()
     }
@@ -84,6 +89,23 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
         }
 
         activity.startActivityForResult(intent, 1)
+    }
+
+    @JavascriptInterface
+    fun openDir() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            // type = "application/epub+zip"
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        activity.startActivityForResult(intent, 3)
+    }
+
+    @JavascriptInterface
+    fun finish(){
+        activity.finish()
     }
 
     private fun readFileToByteArray(path: String): ByteArray? {

@@ -6,6 +6,7 @@ import android.os.Build
 import android.view.View
 import android.view.WindowManager
 import java.security.MessageDigest
+import java.util.*
 
 fun String.md5(): String {
     val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
@@ -13,7 +14,7 @@ fun String.md5(): String {
 }
 
 fun ByteArray.hex(): String {
-    return joinToString("") { "%02X".format(it) }
+    return joinToString("") { "%02X".format(it).toLowerCase(Locale.ROOT) }
 }
 
 fun Activity.makeStatusBarTransparent() {

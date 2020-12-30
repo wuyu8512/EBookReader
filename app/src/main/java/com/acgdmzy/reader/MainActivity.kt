@@ -1,25 +1,26 @@
 package com.acgdmzy.reader
 
+import FileUtil
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
+import android.os.*
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
-import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
+import org.json.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 private val PERMISSIONS_STORAGE = arrayOf(
@@ -29,7 +30,8 @@ private const val REQUEST_PERMISSION_CODE = 1
 
 
 class MainActivity : AppCompatActivity() {
-    var webView : WebView? = null
+    var webView: WebView? = null
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,16 +79,16 @@ class MainActivity : AppCompatActivity() {
             // webView.loadUrl("http://192.168.1.26:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
             webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            //webView.loadUrl("http://192.168.1.26:8080")
+            // webView.loadUrl("http://192.168.1.26:8080")
             webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK)
-        {
+        if (resultCode == RESULT_OK) {
             if (requestCode == 1) {
+                // 打开一本书
                 if (data?.data != null) {
                     val takeFlags = (intent.flags
                             and (Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -98,15 +100,55 @@ class MainActivity : AppCompatActivity() {
                     }
                     loadData(data)
                 }
-            }
-            else if (requestCode == 2){
+            } else if (requestCode == 2) {
+                // 书籍成功解析，加入书架
                 val path = data?.getStringExtra("path")
                 val name = data?.getStringExtra("name")
                 if (path != null && !path.startsWith("content://")) {
                     val webView = this.webView!!
                     webView.evaluateJavascript("addToBook('$path','$name')", null)
                 }
+            } else if (requestCode == 3) {
+                // 导入一个文件夹
+                if (data?.data != null) {
+                    val treeUri = data.data!!
+                    Log.i("Uri", treeUri.toString())
+                    var basePath = FileUtil.getFullPathFromTreeUri(treeUri, this)
+                    val documentFile = DocumentFile.fromTreeUri(this, treeUri)!!
+                    scanEPUB(documentFile)
+                }
             }
+        }
+    }
+
+    private fun scanEPUB(documentFile: DocumentFile) {
+        val webView = this.webView!!
+        val dirs = mutableListOf<DocumentFile>()
+        val addFile = mutableListOf<DocumentFile>()
+        for (file in documentFile.listFiles()) {
+            Log.i("scanEPUB", file.name.toString())
+            if (file.isVirtual) continue
+            if (file.isDirectory && !file.name!!.startsWith(".")) dirs.add(file)
+            if (file.isFile && file.name!!.endsWith("epub", true)) addFile.add(file)
+        }
+        if (addFile.isNotEmpty()) {
+            val baseName = documentFile.name!!
+            val result = JSONArray()
+            val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val currentTime = format.format(Date())
+            for (file in addFile) {
+                val jsonObj = JSONObject()
+                val fileName = file.name!!.replace(".epub","",true)
+                jsonObj.put("book_title", fileName)
+                jsonObj.put("book_path", file.uri.toString())
+                jsonObj.put("book_cover", fileName.md5())
+                jsonObj.put("add_time", currentTime)
+                result.put(jsonObj)
+            }
+            webView.evaluateJavascript("addToBooks('$baseName','$result')", null)
+        }
+        for (dir in dirs) {
+            scanEPUB(dir)
         }
     }
 
@@ -178,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         val newIntent = Intent(this, MainActivity::class.java)
         newIntent.putExtra("path", path);
         newIntent.putExtra("name", name);
-        startActivityForResult(newIntent,2);
+        startActivityForResult(newIntent, 2);
     }
 
     private fun getPath(intent: Intent): String? {
