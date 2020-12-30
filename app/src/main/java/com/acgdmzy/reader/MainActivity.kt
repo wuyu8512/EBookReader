@@ -90,14 +90,7 @@ class MainActivity : AppCompatActivity() {
             if (requestCode == 1) {
                 // 打开一本书
                 if (data?.data != null) {
-                    val takeFlags = (intent.flags
-                            and (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
-                    try {
-                        contentResolver.takePersistableUriPermission(data.data!!, takeFlags)
-                    } catch (e: Exception) {
-                        Log.w("onActivityResult", "Exception: " + e.message)
-                    }
+                    takePersistableUriPermission(data)
                     loadData(data)
                 }
             } else if (requestCode == 2) {
@@ -111,6 +104,7 @@ class MainActivity : AppCompatActivity() {
             } else if (requestCode == 3) {
                 // 导入一个文件夹
                 if (data?.data != null) {
+                    takePersistableUriPermission(data)
                     val treeUri = data.data!!
                     Log.i("Uri", treeUri.toString())
                     var basePath = FileUtil.getFullPathFromTreeUri(treeUri, this)
@@ -241,5 +235,16 @@ class MainActivity : AppCompatActivity() {
     fun getName(intent: Intent, path: String?): String? {
         val uri = intent.data ?: return path
         return URIPathHelper.getFileName(this, uri)?.replace(".epub", "", true) ?: path
+    }
+
+    fun takePersistableUriPermission(intent: Intent){
+        val takeFlags = (intent.flags
+                and (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
+        try {
+            contentResolver.takePersistableUriPermission(intent.data!!, takeFlags)
+        } catch (e: Exception) {
+            Log.w("takePersistableUri", "Exception: " + e.message)
+        }
     }
 }
