@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true
         webSettings.allowFileAccess = true
-        webView.addJavascriptInterface(AndroidJs(this), "drive")
+        webView.addJavascriptInterface(AndroidJs(this), "device")
 
         webView.webViewClient = object : WebViewClient() {
             // 链接跳转都会走这个方法
@@ -76,10 +76,10 @@ class MainActivity : AppCompatActivity() {
         }
         if (name == null) name = path
         if (path != null) {
-            // webView.loadUrl("http://192.168.1.26:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            // webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
             webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            // webView.loadUrl("http://192.168.1.26:8080")
+            // webView.loadUrl("http://192.168.43.83:8080")
             webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }

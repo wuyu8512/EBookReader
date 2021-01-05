@@ -1,22 +1,22 @@
 package com.acgdmzy.reader
 
-import android.R.attr
-import android.R.attr.password
 import android.content.Intent
 import android.net.Uri
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.*
+import kotlinx.coroutines.*
+import org.apache.commons.io.IOUtils
+import java.util.concurrent.locks.ReentrantLock
 
 // 继承自Object类
 class AndroidJs constructor(private val activity: MainActivity) : Any() {
 
     private val tag = "AndroidJs"
+    private val mLock = ReentrantLock()
 
     // 定义JS需要调用的方法
     // 被JS调用的方法必须加入@JavascriptInterface注解
@@ -27,19 +27,18 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
 
     @JavascriptInterface
     fun readFile(path: String): String? {
+        Log.i("Path", path)
         if (path.startsWith("content://")) {
             val uri = Uri.parse(path)
             val inStream = activity.contentResolver.openInputStream(uri)
-            if (inStream != null) {
-                val buffer = ByteArray(inStream.available())
-                inStream.read(buffer)
-                return Base64.encodeToString(buffer, Base64.NO_WRAP)
-            }
+            val result = Base64.encodeToString(IOUtils.toByteArray(inStream), Base64.NO_WRAP)
+            inStream?.close()
+            return result
         } else {
             val data = readFileToByteArray(path)
             if (data != null) return Base64.encodeToString(data, Base64.NO_WRAP)
         }
-        if (path.startsWith("file://"))  {
+        if (path.startsWith("file://")) {
             val data = readFileToByteArray(path.substring(7))
             if (data != null) return Base64.encodeToString(data, Base64.NO_WRAP)
         }
@@ -47,11 +46,32 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
+    fun readFileAsync(resultCode: Int, name: String, path: String) {
+        GlobalScope.launch(Dispatchers.IO) {
+            mLock.lock()
+            val data: String?
+            try {
+                data = readFile(path)
+                activity.webView!!.post {
+                    activity.webView!!.evaluateJavascript(
+                        "readFileResult($resultCode,'$name','$data')",
+                        null
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                mLock.unlock()
+            }
+        }
+    }
+
+    @JavascriptInterface
     fun saveFile(name: String, type: String?, base64Data: String) {
         val data = Base64.decode(base64Data.split(",")[1], 0)
         val dir = activity.getExternalFilesDir(type)
         writeByteArrayToFile("$dir/$name", data)
-        activity.setResult(AppCompatActivity.RESULT_OK,activity.intent)
+        activity.setResult(AppCompatActivity.RESULT_OK, activity.intent)
         Log.i("saveFile", name)
     }
 
@@ -71,11 +91,11 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
-    fun loadBook(name: String,path: String) {
+    fun loadBook(name: String, path: String) {
         val newIntent = Intent(activity, MainActivity::class.java)
         newIntent.putExtra("path", path);
         newIntent.putExtra("name", name);
-        activity.startActivityForResult(newIntent,2);
+        activity.startActivityForResult(newIntent, 2);
     }
 
     @JavascriptInterface
@@ -104,7 +124,7 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
-    fun finish(){
+    fun finish() {
         activity.finish()
     }
 
