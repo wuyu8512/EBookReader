@@ -7,18 +7,23 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
-import android.webkit.*
+import android.view.WindowManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
-import org.json.*
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -76,11 +81,19 @@ class MainActivity : AppCompatActivity() {
         }
         if (name == null) name = path
         if (path != null) {
-            // webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
-            webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            if (Build.VERSION.SDK_INT in 23..29) {
+                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                window.statusBarColor = Color.TRANSPARENT
+                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            }
+
+            webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            // webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            // webView.loadUrl("http://192.168.43.83:8080")
-            webView.loadUrl("file:///android_asset/dist/index.html")
+            webView.loadUrl("http://192.168.43.83:8080")
+            // webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }
 
@@ -135,7 +148,7 @@ class MainActivity : AppCompatActivity() {
             val currentTime = format.format(Date())
             for (file in addFile) {
                 val jsonObj = JSONObject()
-                val fileName = file.name!!.replace(".epub","",true)
+                val fileName = file.name!!.replace(".epub", "", true)
                 jsonObj.put("book_title", fileName)
                 jsonObj.put("book_path", file.uri.toString())
                 jsonObj.put("book_cover", fileName.md5())

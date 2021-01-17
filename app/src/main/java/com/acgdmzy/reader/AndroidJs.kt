@@ -2,8 +2,11 @@ package com.acgdmzy.reader
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import android.view.View
+import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -86,8 +89,36 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
     }
 
     @JavascriptInterface
+    fun getStatusBarHeight(): Int {
+        var height = 0
+        if (Build.VERSION.SDK_INT in 23..29){
+            val resourceId =
+                activity.applicationContext.resources.getIdentifier(
+                    "status_bar_height",
+                    "dimen",
+                    "android"
+                )
+            if (resourceId > 0) {
+                height = activity.applicationContext.resources.getDimensionPixelSize(resourceId)
+            }
+            Log.i("getStatusBarHeight", height.toString())
+        }
+        return height
+    }
+
+    @JavascriptInterface
     fun toast(msg: String) {
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    @JavascriptInterface
+    fun setLight() {
+        activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+    }
+
+    @JavascriptInterface
+    fun setDark() {
+        activity.window.decorView.systemUiVisibility = 0
     }
 
     @JavascriptInterface
