@@ -95,7 +95,7 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
         val newIntent = Intent(activity, MainActivity::class.java)
         newIntent.putExtra("path", path);
         newIntent.putExtra("name", name);
-        activity.startActivityForResult(newIntent, 2);
+        activity.startActivityForResult(newIntent, 4);
     }
 
     @JavascriptInterface

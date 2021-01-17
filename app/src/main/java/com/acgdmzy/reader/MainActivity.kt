@@ -111,6 +111,9 @@ class MainActivity : AppCompatActivity() {
                     val documentFile = DocumentFile.fromTreeUri(this, treeUri)!!
                     scanEPUB(documentFile)
                 }
+            }else if (requestCode == 4){
+                val webView = this.webView!!
+                webView.evaluateJavascript("moveToFirst()", null)
             }
         }
     }
