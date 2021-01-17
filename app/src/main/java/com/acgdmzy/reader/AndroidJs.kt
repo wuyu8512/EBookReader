@@ -73,8 +73,12 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
         val data = Base64.decode(base64Data.split(",")[1], 0)
         val dir = activity.getExternalFilesDir(type)
         writeByteArrayToFile("$dir/$name", data)
-        activity.setResult(AppCompatActivity.RESULT_OK, activity.intent)
         Log.i("saveFile", name)
+    }
+
+    @JavascriptInterface
+    fun setResultOK(){
+        activity.setResult(AppCompatActivity.RESULT_OK, activity.intent)
     }
 
     @JavascriptInterface
