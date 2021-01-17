@@ -89,11 +89,11 @@ class MainActivity : AppCompatActivity() {
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             }
 
-            webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
-            // webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            // webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            webView.loadUrl("http://192.168.43.83:8080")
-            // webView.loadUrl("file:///android_asset/dist/index.html")
+            // webView.loadUrl("http://192.168.43.83:8080")
+            webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }
 

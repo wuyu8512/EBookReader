@@ -6,7 +6,6 @@ import android.os.Build
 import android.util.Base64
 import android.util.Log
 import android.view.View
-import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
