@@ -13,6 +13,7 @@ import java.io.*
 import kotlinx.coroutines.*
 import org.apache.commons.io.IOUtils
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.math.log
 
 // 继承自Object类
 class AndroidJs constructor(private val activity: MainActivity) : Any() {
@@ -155,6 +156,18 @@ class AndroidJs constructor(private val activity: MainActivity) : Any() {
         }
 
         activity.startActivityForResult(intent, 3)
+    }
+
+    @JavascriptInterface
+    fun push(str: String){
+        activity.back.add(str)
+        Log.i("push",str)
+    }
+
+    @JavascriptInterface
+    fun pop(){
+        Log.i("pop",activity.back[activity.back.lastIndex])
+        activity.back.removeAt(activity.back.lastIndex)
     }
 
     @JavascriptInterface

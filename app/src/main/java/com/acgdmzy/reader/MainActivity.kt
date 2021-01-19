@@ -36,6 +36,7 @@ private const val REQUEST_PERMISSION_CODE = 1
 
 class MainActivity : AppCompatActivity() {
     var webView: WebView? = null
+    val back = mutableListOf<String>()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,10 +90,10 @@ class MainActivity : AppCompatActivity() {
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             }
 
-            // webView.loadUrl("http://192.168.43.83:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
+            // webView.loadUrl("http://192.168.1.26:8080/#/read/${Uri.encode(path)}/${Uri.encode(name)}")
             webView.loadUrl("file:///android_asset/dist/index.html#/read/${Uri.encode(path)}/${Uri.encode(name)}")
         } else {
-            // webView.loadUrl("http://192.168.43.83:8080")
+            // webView.loadUrl("http://192.168.1.26:8080")
             webView.loadUrl("file:///android_asset/dist/index.html")
         }
     }
@@ -162,9 +163,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
             val webView = this.webView!!
+            if (back.isNotEmpty()){
+                webView.evaluateJavascript("back('${back.last()}')",null)
+                // back.removeAt(back.lastIndex)
+                return true
+            }
             if (webView.canGoBack()) {
                 webView.goBack()
                 return true
